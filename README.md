@@ -1,7 +1,7 @@
 # DataWrangling_Lab2_Group10
 Repository for the Assessments of Data Wrangling
 
-Welcome to our GitHub repository. This repository is intended for sharing and collaborating on our project files. 
+This repository is intended for sharing and collaborating on our project files. 
 
 **Branches**
 
