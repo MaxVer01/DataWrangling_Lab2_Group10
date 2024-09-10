@@ -1,5 +1,5 @@
 # DataWrangling_Lab2_Group10
-Repository for the Assignment of Data Wrangling
+Repository for the assignments of Data Wrangling
 
 This repository is intended for sharing and collaborating on our project files. 
 
@@ -7,7 +7,7 @@ This repository is intended for sharing and collaborating on our project files.
 
 We are currently using the main branch for our work. You can push your files directly to this branch or, if you'd prefer to avoid overwriting anything, we can create and work on separate branches.
 - Main Branch: All files can be added here. If we stick to using this branch only, make sure to name your files clearly so everyone understands their purpose.
-- Additional Branches: If necessary, we can create different branches later on to manage specific tasks or assessments.
+- Additional Branches: If necessary, we can create different branches later on to manage specific tasks.
   
 **Python**
 
