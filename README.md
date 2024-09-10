@@ -30,4 +30,4 @@ Steps for working with SQL files:
 We also need to provide an overview of our work in PDF format. We can use either Google Docs or Microsoft Word for this.
 
 A link to our shared Word document can already be found in the main branch.
-
+And also here: https://solisservices-my.sharepoint.com/:w:/r/personal/m_c_j_verwijmeren_students_uu_nl/Documents/Documenten/Asssessment%201%20Data%20wrangling%20.docx?d=w09603220cc0c47ae8caa78cca5fdea02&csf=1&web=1&e=YkiIY9
