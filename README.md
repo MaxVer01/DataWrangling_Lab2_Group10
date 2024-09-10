@@ -1,5 +1,5 @@
 # DataWrangling_Lab2_Group10
-Repository for the Assessments of Data Wrangling
+Repository for the Assignment of Data Wrangling
 
 This repository is intended for sharing and collaborating on our project files. 
 
