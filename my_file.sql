@@ -56,7 +56,6 @@ CREATE TABLE Account (
 CREATE TABLE "Transaction" (
     transaction_id CHAR(5) PRIMARY KEY,
     account_number VARCHAR(5),
-    dest_account_number CHAR (5),
     transaction_type VARCHAR(50),
     amount NUMERIC(10, 2),
     transaction_date DATE,
