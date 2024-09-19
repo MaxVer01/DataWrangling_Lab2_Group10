@@ -1,7 +1,16 @@
 
 ## Task 2 
 
-### Task2 - a) Outer join : 
+
+
+### a) Outer join : 
+
+**Natural language**: The customers who have loans and, as well customers who haven't yet. 
+   So we can offer them a customized services  
+
+**Relational Algebra**:
+
+Π <sub> first_name, last_name, email, phone_number, loan_number? 'Offer Loan' else 'Offer other service' </sub>(Customer ⟕  Borrows)  
 ```sql
 /* Task2 - a) Outer join : 
  *  The customers who have loans and, as well customers who haven't yet. 
@@ -18,9 +27,24 @@ SELECT c.first_name, c.last_name, c.email, c.phone_number,
 
 ```
 
-### Task2 b) Aggregate function : 
+
+
+
+### b) Aggregate function : 
+
+**Natural language**:  We want to evaluate branches performance by their number of granted loans and the average amounts.
+
+**Relational Algebra**: 
+
+Π <sub>branch_name, city, country, loan_count</sub>,
+ ρ<sub>loan_count</sub> (<sub>Loan.branch_id</sub> γ <sub>count(loan_number)</sub>,
+ ρ<sub>average_loan_amount</sub> (<sub>Loan.branch_id</sub> γ <sub>average(amount)</sub>
+   (Loan ⋈ Branch)
+
+
 
 ```sql
+
 /* Task2 - b) Aggregate function : 
  *  We want to evaluate branches performance by their number of  
  *  granted loans and the average amounts    
@@ -35,7 +59,16 @@ SELECT b.branch_name, b.city, b.country,
   GROUP BY l.branch_id; 
 ```
 
-### Task2 - c) Nested query  
+### c) Nested query  
+
+**Natural language**:  Listing employees and their branches they belong by a particular payscale range. 
+
+**Relational Algebra**:
+
+ filteredPayscales ← Π <sub>payscale</sub>  (σ <sub>amout >= 30000 and amout <= 60000</sub> (Salaryhouse))
+
+ Π <sub> employee_id, first_name, last_name, payscale, branch_name </sub> ( σ <sub>payscale ⊂ filteredPayscales </sub>  (Employee ⋈ Branch) )
+
 
 ```sql
 
