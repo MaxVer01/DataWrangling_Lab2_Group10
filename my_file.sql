@@ -199,8 +199,8 @@ SELECT b.branch_name, b.city, b.country,
   INNER JOIN Branch b ON l.branch_id = b.branch_id
   GROUP BY l.branch_id; 
 
-SELECT ('============[Nested query]============');
 --- Nested query
+SELECT ('============[Nested query]============');
 SELECT e.employee_id, e.first_name, e.last_name, e.payscale,
     b.branch_name from Employee as e
     INNER JOIN Branch b  
@@ -209,4 +209,3 @@ SELECT e.employee_id, e.first_name, e.last_name, e.payscale,
     );
 
 SELECT ('============Success-EOF============');
-
