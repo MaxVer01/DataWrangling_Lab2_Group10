@@ -1,7 +1,7 @@
 /*******************************************************************************
    Assignment 1: Data Extraction & Integration
    DB Server: Sqlite
-   Author: Nelson Durañona Sosa, Aaron van Riet, Max Verwijmeren, Lisa Wang
+   Authors: Nelson Durañona Sosa, Aaron van Riet, Max Verwijmeren, Lisa Wang
    
 **********************************************************************************/
 
@@ -91,7 +91,7 @@ CREATE TABLE Borrows (
 
 
 --- Task 2
---- Adding records
+--- Adding records 1
 INSERT INTO Customer (customer_id, first_name, last_name, date_of_birth, email, phone_number, street, house_number, city, country, zipcode) VALUES
 ('C001', 'John', 'Doe', '1985-03-15', 'john.doe@email.com', '+12345678901', 'Maple Street', '123', 'New York', 'USA', '10001'),
 ('C002', 'Jane', 'Smith', '1990-07-22', 'jane.smith@email.com', '+12345678902', 'Oak Avenue', '456', 'Los Angeles', 'USA', '90001'),
@@ -108,7 +108,7 @@ INSERT INTO Customer (customer_id, first_name, last_name, date_of_birth, email, 
 ('C013', 'James', 'Gonzalez', '1979-12-11', 'james.gonzalez@email.com', '+12345678913', 'Maple Street', '111', 'Jacksonville', 'USA', '32201'),
 ('C014', 'Olivia', 'Perez', '1992-03-06', 'olivia.perez@email.com', '+12345678914', 'Oak Avenue', '222', 'Columbus', 'USA', '43004'),
 ('C015', 'Matthew', 'Davis', '1983-07-24', 'matthew.davis@email.com', '+12345678915', 'Pine Road', '333', 'Charlotte', 'USA', '28201'),
-('C016', 'John', 'Doe', '1985-03-15', 'john.doe@email.com', '+12345678901', 'Maple Street', '124', 'New York', 'USA', '10001')
+('C016', 'John', 'Doe', '1985-03-15', 'john.doe@email.com', '+12345678901', 'Maple Street', '124', 'New York', 'USA', '10001');
 
 INSERT INTO Branch (branch_id, branch_name, street, building, street_number, city, country, zipcode) VALUES
 ('BR001', 'London Central', 'Oxford Street', 'Building A', '10', 'London', 'United Kingdom', 'W1D 1NN'),
