@@ -181,6 +181,7 @@ INSERT INTO Employee (employee_id, first_name, last_name, branch_id, function, p
 --- Nested query
 
 --- Left outer join
+SELECT ('============[Left outer join]=============');
 SELECT c.first_name, c.last_name, c.email, c.phone_number, 
     CASE WHEN b.loan_number is NULL 
         THEN 'Offer Loan' 
@@ -190,6 +191,7 @@ SELECT c.first_name, c.last_name, c.email, c.phone_number,
     ON c.customer_id =  b.customer_id ORDER BY c.first_name;
 
 --- Aggregate function
+SELECT ('============[Aggregate function]============');
 SELECT b.branch_name, b.city, b.country, 
     COUNT(l.loan_number) loan_count, 
     AVG(l.amount) AS average_loan_amount 
@@ -197,6 +199,7 @@ SELECT b.branch_name, b.city, b.country,
   INNER JOIN Branch b ON l.branch_id = b.branch_id
   GROUP BY l.branch_id; 
 
+SELECT ('============[Nested query]============');
 --- Nested query
 SELECT e.employee_id, e.first_name, e.last_name, e.payscale,
     b.branch_name from Employee as e
@@ -204,3 +207,6 @@ SELECT e.employee_id, e.first_name, e.last_name, e.payscale,
     WHERE e.payscale IN (  
         SELECT payscale FROM  Salaryhouse WHERE  amount BETWEEN 30000 AND 60000
     );
+
+SELECT ('============Success-EOF============');
+
