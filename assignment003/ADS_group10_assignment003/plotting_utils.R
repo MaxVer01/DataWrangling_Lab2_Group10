@@ -22,3 +22,17 @@ plot_histograms_and_bars <- function(data) {
 }
 
 
+
+plot_real_vs_predict <- function(title, True_Score, Predicted_Score ){
+  results_rf <- data.frame(True_Score =True_Score, Predicted_Score = Predicted_Score)
+  
+  ggplot(results_rf, aes(x = True_Score, y = Predicted_Score)) +
+    geom_point(color = "blue", alpha = 0.6) + 
+    geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+    labs(title = paste(title,": Prediction vs True value of Score"),
+         x = "True Score",
+         y = "Predicted Score") +
+    theme(aspect.ratio = -0.5)+
+    theme_minimal()
+  
+}
