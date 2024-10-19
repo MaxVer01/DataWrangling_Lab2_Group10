@@ -493,9 +493,9 @@ head(resultsComparisson)
 **XGBoost delivered the best performance in terms of both MSE and RMSE. Its boosting mechanism allowed it to effectively minimize the error over multiple rounds, making it the top-performing model in this project.**
 
 
-## Storing prediction file 
+### Storing prediction file 
  
- Finally we se the best model(DT-Random Fine-tuned) to predict the test dataset. The output is a single vector with 79 numeric values) in a file called `predictions.rds`:
+ Finally we use the best model(DT-Random Fine-tuned) to predict the test dataset. The output is a single vector with 79 numeric values) stored in a file called `predictions.rds`:
 
 ```{r}
 final_test_num <- df_categorical_to_dummyvars(Test_DF)
