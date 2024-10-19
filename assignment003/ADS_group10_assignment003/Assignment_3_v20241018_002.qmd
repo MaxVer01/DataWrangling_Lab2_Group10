@@ -1,0 +1,577 @@
+---
+title: "Supervised learning competition"
+author: 
+  - Aaron van Riet
+  - Max Verwijmeren
+  - Nelson Durañona Sosa
+date: 2024-10-18
+format:
+  html:
+    toc: true
+    self-contained: true
+    code-fold: true
+    df-print: kable
+---
+
+> Installing dependencies: 
+
+```{r}
+#| label: Install R dependencies
+#| message: false
+
+# Installing packages
+if (!require(tidyverse)) {
+  install.packages("tidyverse")
+}
+
+if (!require(readr)) {
+  install.packages("readr")
+}
+
+if (!require(fastDummies)) {
+  install.packages("fastDummies")
+}
+
+if (!require(caret)) {
+  install.packages("caret")
+}
+
+if (!require(xgboost)) {
+  install.packages("xgboost")
+}
+
+if (!require(corrplot)) {
+  install.packages("corrplot")
+}
+
+if (!require(randomForest)) {
+  install.packages("randomForest")
+}
+```
+
+
+```{r}
+#| label: R packages
+#| echo: false
+#| warning: false
+#| message: false
+
+library(readr)
+library(ggplot2)
+library(lattice)
+library(class)
+library(fastDummies)
+library(caret)
+library(xgboost)
+library(corrplot)
+library(knitr)
+library(randomForest)
+library(tidyverse)
+
+
+# additional packages here
+source("pre-processing_utils.R")
+source("analysis_utils.R")
+source("plotting_utils.R")
+```
+
+```{r}
+#| label: data loading
+#| echo: false
+
+# your R code to load the data here
+Train_DF <- readRDS("raw_data/train.rds")
+Test_DF <- readRDS("raw_data/test.rds")
+### Split the original train set into 80% and 20%
+train.splits <- Train_DF |>
+  mutate(split = sample(rep(c("train", "test"), times = c(253, 63))))
+train.subset80 <- train.splits |> filter(split == "train")
+test.unseen20 <- train.splits |> filter(split == "test")
+```
+ 
+
+# Assignment 3: Group 10, Lab 2
+
+In this assignment, we aim to predict student performance based on various characteristics. To achieve this goal, two datasets are used: "train.rds" and "test.rds". The complete assignment can be found via the following [link](https://infomdwr.nl/assignments/assignment_3.html).
+
+Score is used to measure student performance. In this assignment, several methods are tested to predict this score based on the given features. The model that performed best in the tests was then fine-tuned to optimize the prediction of the score.
+
+
+
+# Data description
+
+The dataset consists of 316 observations and 31 variables, categorized into numerical and categorical types. Specifically, it contains **13 numerical variables** and  **18 categorical variables**. Additionally, there is no missing data in the dataset (checked with `sum(is.na(train)) == 0 `), hence was not necessary imputation methods.
+
+For a detailed explanation of each variable and its values, please refer to the following: [Attribute overview](https://infomdwr.nl/assignments/competition_files/student.txt).
+
+Firstly, we explored the distribution of numerical values and categorical:
+
+
+```{r}
+#| label: eda visualization1
+#| warning: false
+
+plots <- plot_histograms_and_bars(Train_DF)
+print(plots$numeric_plot)
+print(plots$categorical_plot)
+```
+
+
+
+### Correlation Matrix
+
+To check for correlation between the variables we use a Correlation Matrix
+
+```{r}
+# Numerical columns for matrix
+numerical_columns <- Train_DF[sapply(Train_DF, is.numeric)]
+
+
+# Calc matrix
+cor_matrix <- cor(numerical_columns, use = "complete.obs")
+
+# Correlation matrix
+corrplot(cor_matrix,
+  method = "color", type = "upper",
+  tl.col = "black", tl.srt = 45, addCoef.col = "black",
+  number.cex = 0.7
+)
+```
+
+The correlation matrix shows the relationships between the numerical variables in the dataset. Each cell displays a correlation coefficient, which ranges from -1 to 1. A coefficient close to 1 means a strong positive relationship, while a value near -1 indicates a strong negative relationship. Coefficients close to 0 suggest there's little to no linear connection between the variables.
+
+**Score vs. Other Variables:**
+
+-   `Score` and `Failures`: There's a moderate negative correlation (-0.41) between score and failures, meaning students with more past failures tend to score lower.
+
+-   `Score` and `Parental Education`: The score has a positive correlation (0.27) with both `Medu` (mother's education) and `Fedu` (father's education), suggesting that students with more educated parents usually perform better.
+
+-   `Score` and `Absences`: There’s a weak negative correlation (-0.19) between score and absences. This implies that students who miss more classes tend to score slightly lower, though the effect isn't very strong.
+
+**Relationships Between Other Variables:**
+
+-   `Medu` and `Fedu`: These two variables are strongly positively correlated (0.61), meaning that if a student’s mother has higher education, the father often does too.
+
+-   `Dalc` and `Walc`: There’s a strong positive correlation (0.63) between `Dalc` (workday alcohol consumption) and `Walc` (weekend alcohol consumption), suggesting that students who drink more during the week also drink more on weekends.
+
+-   `Failures`, `Medu`, and `Fedu`: Failures are negatively correlated with both `Medu` (-0.27) and `Fedu` (-0.28), meaning that students with more educated parents tend to have fewer past failures.
+
+
+# Model description
+
+*Briefly describe which models you compare to perform prediction. (approx. two or three paragraphs)*
+For this project, and considering the size of our team, we decided to try the following models : **K-Nearest Neighbors (KNN)**, **Linear Regression**, **Decision trees-Random Forest and Decision trees- Extreme Gradient Boosting (XGBoost)**.
+ 
+ 
+## 1. KNN 
+
+  KNN is a simple model used for both classification and regression. It works by looking at the 'k' closest data points (neighbors) to make predictions based on their values. KNN doesn’t assume any specific data pattern, making it very flexible. However, it can be slow with large datasets since it has to calculate distances between points for every prediction. It’s also sensitive to how the data is scaled and the choice of 'k'.
+
+
+## 2. Linear Regression
+
+Linear Regression is one of the most basic and commonly used models for predicting continuous outcomes. It fits a straight line to the data that best explains the relationship between the input and the target variable.
+We applied the following steps: 
+
+## 3. Classification trees - Boosting  
+
+XGBoost is a model used for both classification and regression tasks. It is an advanced version of the boosting method, where models are built sequentially, and each new model focuses on correcting the errors of the previous ones. XGBoost is known for its speed and performance, especially with large datasets, and can handle both missing data and unstructured data well. It also provides options for regularization, which helps prevent overfitting. Despite its complexity, XGBoost often delivers highly accurate predictions.
+
+## 4. Classification trees - Random Forest 
+
+Random Forest is a more advanced model that builds multiple decision trees and combines their predictions. It’s good for both classification and regression tasks and can handle large datasets with many features. Random Forest tends to be more accurate than single decision trees and helps reduce overfitting. However, it’s not as easy to interpret as a single decision tree, but it usually gives much better results.
+
+# Data transformation and pre-processing
+
+Pre-processing steps to make the data more suitable for the models. In this section, we will explain the different steps we took to prepare the data for each model. 
+
+
+
+## Data Preprocessing for KNN
+
+```{r}
+# Setting up dataframe
+DF_KNN <- Train_DF
+```
+
+1. Step 1: Making dummy variables for categorical values
+
+```{r}
+DF_KNN <- dummy_cols(DF_KNN, select_columns = c("school", "sex", "address", "famsize", "Pstatus", "Mjob", "Fjob", "reason", "guardian", "schoolsup", "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic"), remove_first_dummy = TRUE)
+
+# Removing original categorical columns
+DF_KNN <- DF_KNN[, !names(DF_KNN) %in% c(
+  "school", "sex", "address", "famsize", "Pstatus", "Mjob", "Fjob", "reason", "guardian", "schoolsup",
+  "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic"
+)]
+```
+
+2. Step 2: Normalizing numerical values
+
+```{r}
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+# Select numeric columns
+numeric_columns <- sapply(DF_KNN, is.numeric)
+numeric_columns["score"] <- FALSE
+DF_KNN[numeric_columns] <- lapply(DF_KNN[numeric_columns], normalize)
+
+# Checking DF
+head(DF_KNN)
+```
+3. Step 3: Splitting data into training en test sets
+
+    ```{r}
+# splitting the train dataset to make a test dataframe (80%-20%)
+indices <- sample(1:nrow(DF_KNN), size = 0.8 * nrow(DF_KNN))
+
+Train_KNN_80 <- DF_KNN[indices, ]
+Test_KNN_20 <- DF_KNN[-indices, ]
+
+# splitting score from features for training set and preparing testing set
+KNN_train_features <- Train_KNN_80[, -which(names(Train_KNN_80) == "score")]
+KNN_train_labels <- Train_KNN_80$score
+
+KNN_test_features <- Test_KNN_20[, -which(names(Test_KNN_20) == "score")]
+KNN_test_labels <- Test_KNN_20$score
+    ```
+
+## Data Preprocessing for Linear Regression
+
+Since linear regression required numerical input, to deal with categorical variables we created dummy variables. For more than two levels, were created additional dummy variables. For this method we did not establish arbitrary relations between levels. For instance, guardian was mapped as follows: 
+```
+guardian_mother=ifelse(guardian=="mother",1,0),
+guardian_father=ifelse(guardian=="father",1,0),
+guardian_other=ifelse(guardian=="other",1,0),
+
+```
+1. Initially we started with a simple predictor using `failures` because it has the strongest correlation with the response variable `score`   
+2. We applied attribute selection iterating over all other predictors :
+  2.1 Cross-validation with k-folds incorporating this tentative predictor  
+  2.2 After try all predictors by choose which that minimizes the MSE error
+  2.3 Iterate and pick another predictor, repeat the process.
+3. We after 7 predictors as we notice the MSE was not improving by adding more.
+
+The final predictors is given by 
+
+```{r}
+#| label: eda visualization2
+#| warning: false
+
+
+lm_formula <- "score~failures + sex+Medu + schoolsup + goout + romantic + Mjob_other"
+
+train.numeric <- df_as_numeric(train.subset80)
+linearReg.model <- lm(formula = lm_formula, data = train.numeric)
+coef(linearReg.model)
+```
+
+
+## Data Preprocessing for Random Forest
+
+```{r}
+DF_RF = Train_DF
+```
+
+-   **Step 1: Making dummy variables for categorical values**
+
+    RandomForest does not support categorical variables. We'll convert these variables into numeric form.
+
+```{r}
+DF_RF <- dummy_cols(DF_RF, select_columns = c("school", "sex", "address","famsize", "Pstatus","Mjob", "Fjob", "reason", "guardian", "schoolsup", "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic"), remove_first_dummy = TRUE)
+
+# Removing original categorical columns
+DF_RF <- DF_RF[, !names(DF_RF) %in% c("school", "sex", "address", "famsize", "Pstatus",  "Mjob", "Fjob", "reason", "guardian", "schoolsup", 
+"famsup", "paid", "activities", "nursery", "higher","internet", "romantic")]
+```
+
+Random Forest doesn’t require feature scaling.
+
+-   **Step 2: Splitting data into training en test sets**
+
+    ```{r}
+    #splitting the train dataset to make a test dataframe (80%-20%)
+    indices <- sample(1:nrow(DF_RF), size = 0.8 * nrow(DF_RF))
+
+    Train_RF_80 <- DF_RF[indices, ]
+    Test_RF_20 <- DF_RF[-indices, ]
+
+    # splitting score from features for training set and preparing testing set
+    RF_train_features <- Train_RF_80[, -which(names(Train_RF_80) == "score")]
+    RF_train_labels <- Train_RF_80$score
+
+    RF_test_features <- Test_RF_20[, -which(names(Test_RF_20) == "score")]
+    RF_test_labels <- Test_RF_20$score
+    ```
+
+
+## Data Preprocessing for XGBoost
+
+```{r}
+DF_XGBoost <- Train_DF
+```
+
+-   **Step 1: Making dummy variables for categorical values**
+
+XGBoost does not support categorical variables. We'll convert these variables into numeric form.
+
+```{r}
+DF_XGBoost <- dummy_cols(DF_XGBoost, select_columns = c("school", "sex", "address", "famsize", "Pstatus", "Mjob", "Fjob", "reason", "guardian", "schoolsup", "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic"), remove_first_dummy = TRUE)
+
+# Removing original categorical columns
+DF_XGBoost <- DF_XGBoost[, !names(DF_XGBoost) %in% c(
+  "school", "sex", "address", "famsize", "Pstatus", "Mjob", "Fjob", "reason", "guardian", "schoolsup",
+  "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic"
+)]
+```
+
+XGBoost doesn’t require feature scaling, unlike the first model KNN. It is tree-based and uses decision boundaries, so whether the data is standardized or not will not affect the performance.
+
+-   **Step 2: Splitting data into training en test sets**
+
+    ```{r}
+# splitting the train dataset to make a test dataframe (80%-20%)
+indices <- sample(1:nrow(DF_XGBoost), size = 0.8 * nrow(DF_XGBoost))
+
+Train_XGB_80 <- DF_XGBoost[indices, ]
+Test_XGB_20 <- DF_XGBoost[-indices, ]
+
+# splitting score from features for training set and preparing testing set
+XGB_train_features <- Train_XGB_80[, -which(names(Train_XGB_80) == "score")]
+XGB_train_labels <- Train_XGB_80$score
+
+XGB_test_features <- Test_XGB_20[, -which(names(Test_XGB_20) == "score")]
+XGB_test_labels <- Test_XGB_20$score
+    ```
+
+## 4 Model Testing
+
+### 4.1 KNN
+
+```{r}
+# Training KNN-model with k=5
+set.seed(123)
+knn_predictions <- knn(train = KNN_train_features, test = KNN_test_features, cl = KNN_train_labels, k = 5)
+```
+
+```{r}
+knn_predictions <- as.numeric(knn_predictions)
+
+# Calc RMSE & MSE
+rmse_knn <- sqrt(mean((knn_predictions - KNN_test_labels)^2))
+mse_knn <- mean((knn_predictions - KNN_test_labels)^2)
+
+sprintf("Random Forest -->  mse = %.3f, rmse = %.3f", rmse_knn, mse_knn)
+```
+
+```{r}
+# Checking Prediction vs True value of Score when with the model from the 80/20
+results_knn <- data.frame(True_Score = KNN_test_labels, Predicted_Score = knn_predictions)
+
+ggplot(results_knn, aes(x = True_Score, y = Predicted_Score)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "KNN: Prediction vs True value of Score",
+    x = "True Score",
+    y = "Predicted Score"
+  ) +
+  theme_minimal()
+```
+
+### 4.2 Linear Regression
+
+```{r}
+set.seed(123)
+# Training
+
+LR_test_labels <- test.unseen20$score
+
+# Predicting
+unseen.num <- df_as_numeric(test.unseen20)
+lr_predictions <- predict(linearReg.model, newdata = unseen.num)
+```
+
+```{r}
+# Calculate MSE and RMSE
+lr_mse <- mean((lr_predictions - unseen.num$score)^2)
+lr_rmse <- sqrt(lr_mse)
+
+sprintf("Linear regression -->  mse = %.3f, rmse = %.3f", lr_mse, lr_rmse)
+```
+
+```{r}
+# Checking Prediction vs True value of Score when with the model from the 80/20
+results_lr <- data.frame(True_Score = LR_test_labels, Predicted_Score = lr_predictions)
+
+
+ggplot(results_lr, aes(x = True_Score, y = Predicted_Score)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "Linear Regression: Prediction vs True value of Score",
+    x = "True Score",
+    y = "Predicted Score"
+  ) +
+  theme_minimal()
+```
+
+### 4.3 Random Forest
+
+```{r}
+set.seed(123)
+# Training
+rf_model <- randomForest(x = RF_train_features, y = RF_train_labels, ntree = 100)
+
+# Predicting
+rf_predictions <- predict(rf_model, RF_test_features)
+```
+
+```{r}
+# Calculate MSE and RMSE
+rf_mse <- mean((rf_predictions - RF_test_labels) ^ 2)   
+rf_rmse <- sqrt(rf_mse)                                 
+
+sprintf("Random Forest -->  mse = %.3f, rmse = %.3f", rf_mse, rf_rmse)
+```
+
+```{r}
+#Checking Prediction vs True value of Score when with the model from the 80/20
+results_rf <- data.frame(True_Score = RF_test_labels, Predicted_Score = rf_predictions)
+
+ggplot(results_rf, aes(x = True_Score, y = Predicted_Score)) +
+  geom_point(color = "blue", alpha = 0.6) + 
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Random Forest: Prediction vs True value of Score",
+       x = "True Score",
+       y = "Predicted Score") +
+  theme_minimal()
+```
+
+
+
+### 4.4 XGBoost
+
+```{r}
+set.seed(123)
+# Converting training and testing sets into DMatrix
+XGB_dtrain <- xgb.DMatrix(data = as.matrix(XGB_train_features), label = XGB_train_labels)
+XGB_dtest <- xgb.DMatrix(data = as.matrix(XGB_test_features), label = XGB_test_labels)
+
+# hyperparameters
+params <- list(
+  objective = "reg:squarederror",
+  eval_metric = "rmse",
+  eta = 0.1,
+  max_depth = 6,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Training
+xgb_model <- xgb.train(params = params, data = XGB_dtrain, nrounds = 100, watchlist = list(train = XGB_dtrain, test = XGB_dtest), early_stopping_rounds = 10, print_every_n = 10)
+
+# Evaluating
+XGB_prediction <- predict(xgb_model, XGB_dtest)
+```
+
+```{r}
+# Calculate MSE and RMSE
+XGB_mse <- mean((XGB_prediction - XGB_test_labels)^2)
+XGB_rmse <- sqrt(XGB_mse)
+
+sprintf("XGB -->  mse = %.3f, rmse = %.3f", XGB_mse, XGB_rmse)
+```
+
+```{r}
+# Checking Prediction vs True value of Score when with the model from the 80/20
+results_xgb <- data.frame(True_Score = XGB_test_labels, Predicted_Score = XGB_prediction)
+
+ggplot(results_xgb, aes(x = True_Score, y = Predicted_Score)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "XGBoost: Prediction vs True value of Score",
+    x = "True Score",
+    y = "Predicted Score"
+  ) +
+  theme_minimal()
+```
+
+# 5 Model Comparison
+
+After applying four different models to predict student performance, we now compare the results using **MSE (Mean Squared Error)** and **RMSE (Root Mean Squared Error)** as evaluation metrics. These metrics give us insight into the accuracy of the models, with lower values indicating better performance.
+
+```{r}
+#| label: tbl-results
+#| message: false
+#|
+resultsComparisson <- data.frame(
+  Method = c(
+    "K-Nearest Neighbors",
+    "Linear Regression",
+    "DT-Random Forest",
+    "DT-XGBoost"
+  ),
+  MSE = c(mse_knn, lr_mse, rf_mse, XGB_mse),
+  RMSE = c(rmse_knn, lr_rmse, rf_rmse, XGB_rmse)
+)
+head(resultsComparisson)
+```
+
+- KNN was trained with k=5, and the results show how the model performed in predicting the scores.
+
+- Linear Regression is the simplest model we tested. It assumes a linear relationship between the features and the target variable (score). Given the nature of the dataset, this assumption may not always hold.
+
+- The linear regression model had a relatively higher error compared to the other models. This is likely due to the linearity assumption, which does not capture the complexities of the data well.
+
+- Random Forest builds multiple decision trees and aggregates their predictions. This model typically performs better in cases where there are complex interactions between variables.
+
+- Random Forest showed strong performance in terms of both MSE and RMSE, with lower error than KNN and Linear Regression. This suggests that it was able to better capture the patterns in the data.
+
+- XGBoost is an advanced ensemble learning model that uses boosting to sequentially improve weak learners. 
+
+**XGBoost delivered the best performance in terms of both MSE and RMSE. Its boosting mechanism allowed it to effectively minimize the error over multiple rounds, making it the top-performing model in this project.**
+
+
+## Storing prediction file 
+ 
+ Finally we se the best model to predict the test dataset. The outou is a single vector with 79 numeric values) in a file called `predictions.rds`:
+
+```{r}
+#
+categorical_cols <- c(
+  "school", "sex", "address", "famsize", "Pstatus", "Mjob", "Fjob", "reason",
+  "guardian", "schoolsup", "famsup", "paid", "activities", "nursery",
+  "higher", "internet", "romantic"
+)
+
+DF_XGBoost_Predic_Text <- dummy_cols(Test_DF,
+  select_columns = categorical_cols,
+  remove_first_dummy = TRUE
+) %>%
+  select(-all_of(categorical_cols))
+
+pred_vec <- predict(xgb_model, xgb.DMatrix(data = as.matrix(DF_XGBoost_Predic_Text)))
+write_rds(pred_vec, "predictions.rds")
+
+```
+
+
+
+
+### 5.5 Conclusion
+
+In future work, further tuning of hyperparameters for each model may improve performance even more, and exploring additional models could provide further insight into student performance prediction.
+
+
+
+# Team member contributions
+
+Write down what each team member contributed to the project.
+
+- Author One: a, b, c
+- Author Two: b, c, d
+- Author Three: a, b, d

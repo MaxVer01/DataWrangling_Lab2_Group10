@@ -1,0 +1,7 @@
+"0","DF_XGBoost <- dummy_cols(DF_XGBoost, select_columns = c(""school"", ""sex"", ""address"", ""famsize"", ""Pstatus"", ""Mjob"", ""Fjob"", ""reason"", ""guardian"", ""schoolsup"", ""famsup"", ""paid"", ""activities"", ""nursery"", ""higher"", ""internet"", ""romantic""), remove_first_dummy = TRUE)"
+"0",""
+"0","# Removing original categorical columns"
+"0","DF_XGBoost <- DF_XGBoost[, !names(DF_XGBoost) %in% c("
+"0","  ""school"", ""sex"", ""address"", ""famsize"", ""Pstatus"", ""Mjob"", ""Fjob"", ""reason"", ""guardian"", ""schoolsup"","
+"0","  ""famsup"", ""paid"", ""activities"", ""nursery"", ""higher"", ""internet"", ""romantic"""
+"0",")]"

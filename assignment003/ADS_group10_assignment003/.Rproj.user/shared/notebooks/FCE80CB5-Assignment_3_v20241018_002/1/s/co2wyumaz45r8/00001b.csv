@@ -1,0 +1,5 @@
+"0","#| label: eda visualization1"
+"0","#| warning: false"
+"0",""
+"0","plots <- plot_histograms_and_bars(Train_DF)"
+"0","print(plots$numeric_plot)"

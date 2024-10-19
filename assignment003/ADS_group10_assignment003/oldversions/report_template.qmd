@@ -1,0 +1,145 @@
+---
+title: "Supervised learning competition"
+author: 
+  - Aaron van Riet
+  - Max Verwijmeren
+  - Nelson Durañona Sosa
+date: 2024-10-18
+format:
+  html:
+    toc: true
+    self-contained: true
+    code-fold: true
+    df-print: kable
+---
+
+
+```{r}
+#| label: R packages
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(ggplot2)
+
+# additional packages here
+source("pre-processing_utils.R")
+source("analysis_utils.R")
+source("plotting_utils.R")
+```
+
+```{r}
+#| label: data loading
+#| echo: false
+
+# your R code to load the data here
+train <- readRDS("raw_data/train.rds")
+test <- readRDS("raw_data/test.rds")
+### Split the original train set into 80% and 20%
+train.splits <- train |>
+  mutate(split = sample(rep(c("train", "test"), times = c(253, 63))))
+train.subset <- train.splits |> filter(split == "train")
+test.unseen <- train.splits |> filter(split == "test")
+train.numeric <- df_as_numeric(train)
+
+```
+ 
+
+
+# Data description
+
+*Describe the data and use a visualization to support your story. (approx. one or two paragraphs)*
+
+The database consists on record students within 360 observations. It was not necessary imputation methods since all values are present, checked with `sum(is.na(train)) == 0 `.  
+ 
+Firstly, we explore the distribution of numerical values and categorical:
+
+
+```{r}
+#| label: eda visualization1
+#| warning: false
+
+plots <- plot_histograms_and_bars(train)
+print(plots$numeric_plot)
+print(plots$categorical_plot)
+
+```
+
+
+
+The main goal is the prediction of the score using available attributes. Consequently, we are interested in the relationship between the `score` and other attributes. In the following correlation graph we can notice positive a negative contributions to the score. The most relevant negative correlation is `failures` followed by `gout`, `age`,`schoolsup`,`Mjob_other`. Conversely, the most important positive correlation  `Medu``Fedu` `higher` `studytime`.  
+
+
+
+
+# Model description
+
+*Briefly describe which models you compare to perform prediction. (approx. two or three paragraphs)*
+
+## Linear Regression
+
+In order to , try the easy solution first. We use a multiple linear regression model. 
+
+We applied the following steps: 
+
+1. Initially we started with a simple predictor using `failures` because it has the strongest correlation with the response variable `score`   
+
+2. We applied attribute selection iterating over all other predictors :
+  2.1 Cross-validation with k-folds incorporating this tentative predictor  
+  2.2 After try all predictors by choose which that minimizes the MSE error
+  2.3 Iterate and pick another predictor , repeat the process.
+3. We after 7 predictors as we notice the MSE was not improving by adding more.
+
+The final predictors is given by 
+
+```{r}
+#| label: eda visualization2
+#| warning: false
+
+
+lm_formula <- 'score~failures + sex+Medu + schoolsup + goout + romantic + Mjob_other'
+
+
+linearReg.model <- lm(formula = lm_formula, data = train.numeric)
+coef(linearReg.model)
+```
+
+
+## Classification trees - Boosting  
+
+
+## Classification trees - Random Forest 
+
+
+# Data transformation and pre-processing
+
+*Describe additional pre-processing steps you have used, if any (e.g., dealing with categorical data, scaling). If you do not do any pre-processing, you can leave this section out.*
+
+
+
+# Model comparison
+
+Describe how you compare the methods and why. (approx. two or three paragraphs)
+
+# Chosen model
+
+Show which method is best and why. (approx. one paragraph) You are welcome to use tables and plots!
+
+```{r}
+#| label: table example
+data.frame(
+  model       = c("Cool model 1", "Cool model 2"),
+  performance = c(1.2, 1.8),
+  other       = c(0.5, 0.3),
+  notes       = c("Some note", "another note")
+)
+```
+
+# Team member contributions
+
+Write down what each team member contributed to the project.
+
+- Author One: a, b, c
+- Author Two: b, c, d
+- Author Three: a, b, d

@@ -1,0 +1,6 @@
+"0","set.seed(123)"
+"0","# Training"
+"0","rf_model <- randomForest(x = RF_train_features, y = RF_train_labels, ntree = 100)"
+"0",""
+"0","# Predicting"
+"0","rf_predictions <- predict(rf_model, RF_test_features)"

@@ -1,0 +1,5 @@
+"0","DF_RF <- dummy_cols(DF_RF, select_columns = c(""school"", ""sex"", ""address"",""famsize"", ""Pstatus"",""Mjob"", ""Fjob"", ""reason"", ""guardian"", ""schoolsup"", ""famsup"", ""paid"", ""activities"", ""nursery"", ""higher"", ""internet"", ""romantic""), remove_first_dummy = TRUE)"
+"0",""
+"0","# Removing original categorical columns"
+"0","DF_RF <- DF_RF[, !names(DF_RF) %in% c(""school"", ""sex"", ""address"", ""famsize"", ""Pstatus"",  ""Mjob"", ""Fjob"", ""reason"", ""guardian"", ""schoolsup"", "
+"0","""famsup"", ""paid"", ""activities"", ""nursery"", ""higher"",""internet"", ""romantic"")]"

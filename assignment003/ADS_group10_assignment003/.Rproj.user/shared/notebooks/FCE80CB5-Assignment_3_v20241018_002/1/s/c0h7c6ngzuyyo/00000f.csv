@@ -1,0 +1,8 @@
+"0","set.seed(123)"
+"0","# Training"
+"0",""
+"0","LR_test_labels <- test.unseen20$score"
+"0",""
+"0","# Predicting"
+"0","unseen.num <- df_as_numeric(test.unseen20)"
+"0","lr_predictions <- predict(linearReg.model, newdata = unseen.num)"

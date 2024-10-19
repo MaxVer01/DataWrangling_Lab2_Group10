@@ -1,0 +1,6 @@
+"0","set.seed(123)"
+"0","# Training"
+"0","lm_model <- lm(score ~ ., data = Train_LR_80)"
+"0",""
+"0","# Predicting"
+"0","lr_predictions <- predict(lm_model, newdata = Test_LR_20)"
