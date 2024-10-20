@@ -216,14 +216,14 @@ KNN_test_labels <- Test_KNN_20$score
 2. Attribute selection :
 We began with a simple predictor based on failures due to its strong correlation with the response variable `score`. Then, we performed attribute selection by:
 
-2.1. Using cross-validation with k-folds to test each predictor.
-2.2. Choosing the predictor that minimized MSE.
-2.4. Repeating the process with additional predictors.
+ - 2.1. Using cross-validation with k-folds to test each predictor.
+ - 2.2. Choosing the predictor that minimized MSE.
+ - 2.4. Repeating the process with additional predictors.
+
 After selecting 7 predictors, we stopped as the MSE stopped improving.
+This process was performed in the auxiliary file `linear_regression.R` by calling `formula <- assemble_linear_formula(train.numeric, predictors, max_pred_number=7, init_formula="score~failures")`.  
 
-The final predictors is given by: .This process was performed in the auxiliary file `linear_regression.R` by calling `formula <- assemble_linear_formula(train.numeric, predictors, max_pred_number=7, init_formula="score~failures")`.  
-
-3. Splitting data into training into sets 80%(training) ,20%(test).
+3. Splitting data into training into sets 80%(training), 20%(test).
 
 ```{r}
 #| label: linear-preparation
