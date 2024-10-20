@@ -166,11 +166,11 @@ For this project, and considering the size of our team, we decided to try the fo
 Linear Regression is one of the most basic and commonly used models for predicting continuous outcomes. It fits a straight line to the data that best explains the relationship between the input and the target variable.
 We applied the following steps: 
 
-## 3. Classification trees - Boosting  
+## 3. Decision Tree - Boosting  
 
 XGBoost is a model used for both classification and regression tasks. It is an advanced version of the boosting method, where models are built sequentially, and each new model focuses on correcting the errors of the previous ones. XGBoost is known for its speed and performance, especially with large datasets, and can handle both missing data and unstructured data well. It also provides options for regularization, which helps prevent overfitting. Despite its complexity, XGBoost often delivers highly accurate predictions.
 
-## 4. Classification trees - Random Forest 
+## 4. Decision Tree - Random Forest 
 
 Random Forest is a more advanced model that builds multiple decision trees and combines their predictions. It’s good for both classification and regression tasks and can handle large datasets with many features. Random Forest tends to be more accurate than single decision trees and helps reduce overfitting. However, it’s not as easy to interpret as a single decision tree, but it usually gives much better results.
 
@@ -183,7 +183,7 @@ Pre-processing steps to make the data more suitable for the models. In this sect
 
 1. Making dummy variables for categorical values
 2. Apply normalization min-max 
-3. Splitting data into training en test sets 80/20
+3. Splitting data into training into sets 80%(training) ,20%(test).
 
 ```{r}
 # 1. Making dummy variables for categorical values
@@ -216,13 +216,16 @@ KNN_test_labels <- Test_KNN_20$score
 
 1. Making dummy variables for categorical values, to obtain only numerical values.
 2. Attribute selection :
-We began with a simple predictor based on failures due to its strong correlation with the response variable score. Then, we performed attribute selection by:
-Using cross-validation with k-folds to test each predictor.
+We began with a simple predictor based on failures due to its strong correlation with the response variable `score`. Then, we performed attribute selection by:
 
-2.1. Choosing the predictor that minimized MSE.
-2.2. Repeating the process with additional predictors.
-2.3. After selecting 7 predictors, we stopped as the MSE stopped improving.
-The final predictors is given by: .This process was performed in the auxiliary file `linear_regression.R`.
+2.1. Using cross-validation with k-folds to test each predictor.
+2.2. Choosing the predictor that minimized MSE.
+2.4. Repeating the process with additional predictors.
+After selecting 7 predictors, we stopped as the MSE stopped improving.
+
+The final predictors is given by: .This process was performed in the auxiliary file `linear_regression.R` by calling `formula <- assemble_linear_formula(train.numeric, predictors, max_pred_number=7, init_formula="score~failures")`.  
+
+3. Splitting data into training into sets 80%(training) ,20%(test).
 
 ```{r}
 #| label: linear-preparation
@@ -351,7 +354,7 @@ sprintf("Linear regression -->  mse = %.3f, rmse = %.3f", lr_mse, lr_rmse)
 plot_real_vs_predict(title = "", True_Score = LR_test_labels, Predicted_Score = lr_predictions)
 ```
 
-### Random Forest
+### Decision Tree - Random Forest
 
 ```{r}
 set.seed(123)
@@ -377,7 +380,7 @@ plot_real_vs_predict(title = "Random Forest", True_Score = RF_test_labels, Predi
 ```
 
 
-### Finetuning Random Forest
+### Decision Tree - Finetuning Random Forest
 
 We tried different methods to Fine tune to model.
 
@@ -419,7 +422,7 @@ plot_real_vs_predict(title = "Random Forest fined", True_Score = RF_labels, Pred
 ```
 
 
-### XGBoost
+### Decision Tree - XGBoost
 
 ```{r}
 set.seed(123)
@@ -460,7 +463,7 @@ plot_real_vs_predict(
 )
 ```
 
-# 5 Model Comparison
+# Model Comparison
 
 After applying four different models to predict student performance, we now compare the results using **MSE (Mean Squared Error)** and **RMSE (Root Mean Squared Error)** as evaluation metrics. These metrics give us insight into the accuracy of the models, with lower values indicating better performance.
 
@@ -490,12 +493,15 @@ head(resultsComparisson)
 
 - XGBoost is an advanced ensemble learning model that uses boosting to sequentially improve weak learners. 
 
-**XGBoost delivered the best performance in terms of both MSE and RMSE. Its boosting mechanism allowed it to effectively minimize the error over multiple rounds, making it the top-performing model in this project.**
 
+# Chosen model
+
+
+**Fine-tunned Random Forest, delivered the best performance in terms of both MSE and RMSE. Its boosting mechanism allowed it to effectively minimize the error over multiple rounds, making it the top-performing model in this project.**
 
 ### Storing prediction file 
- 
- Finally we use the best model(DT-Random Fine-tuned) to predict the test dataset. The output is a single vector with 79 numeric values) stored in a file called `predictions.rds`:
+
+ Finally we use this model to predict over the test dataset. The output is a single vector with 79 numeric values) stored in a file called `predictions.rds`:
 
 ```{r}
 final_test_num <- df_categorical_to_dummyvars(Test_DF)
@@ -506,18 +512,14 @@ length(final_predictions)
 ```
 
 
+### Conclusion
 
-
-### 5.5 Conclusion
-
-In future work, further tuning of hyperparameters for each model may improve performance even more, and exploring additional models could provide further insight into student performance prediction.
-
-
+In future work, further tuning of hyper-parameters for each model may improve performance even more, and exploring additional models could provide further insight into student performance prediction. 
 
 # Team member contributions
 
 Write down what each team member contributed to the project.
 
-- Author One: a, b, c
-- Author Two: b, c, d
-- Author Three: a, b, d
+- Aaron van Riet: pre-processing, Random Forest (Iterative parameter adjustments).
+- Max Verwijmeren: data description, KNN, Random Forest (Iterative parameter adjustments).  
+- Nelson Durañona Sosa: data description, Linear regression, code refactoring.
