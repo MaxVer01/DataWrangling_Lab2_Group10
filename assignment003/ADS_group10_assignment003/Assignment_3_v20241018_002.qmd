@@ -152,7 +152,6 @@ The correlation matrix shows the relationships between the numerical variables i
 
 # Model description
 
-*Briefly describe which models you compare to perform prediction. (approx. two or three paragraphs)*
 For this project, and considering the size of our team, we decided to try the following models : **K-Nearest Neighbors (KNN)**, **Linear Regression**, **Decision trees-Random Forest and Decision trees- Extreme Gradient Boosting (XGBoost)**.
  
  
@@ -164,7 +163,6 @@ For this project, and considering the size of our team, we decided to try the fo
 ## 2. Linear Regression
 
 Linear Regression is one of the most basic and commonly used models for predicting continuous outcomes. It fits a straight line to the data that best explains the relationship between the input and the target variable.
-We applied the following steps: 
 
 ## 3. Decision Tree - Boosting  
 
@@ -249,7 +247,7 @@ lm_formula <- "score~failures + sex+Medu + schoolsup + goout + romantic + Mjob_o
 **Data pre-processing for Random Forest**
 
 1. Making dummy variables for categorical values since RandomForest implementation does not support categorical variables. We'll convert these variables into numeric form.
-2. Splitting data into training en test sets
+2. Splitting data into training and test sets.
 
 ```{r}
 # 1. Making dummy variables for categorical values
@@ -476,7 +474,7 @@ resultsComparisson <- data.frame(
     "K-Nearest Neighbors(k=5)",
     "Linear Regression",
     "DT-Random Forest",
-    "DT-Random Fine-tuned",
+    "DT-Random Forest Fine tuned",
     "DT-XGBoost"
   ),
   MSE = c(mse_knn, lr_mse, rf_mse, mse_cv, XGB_mse),
@@ -497,7 +495,7 @@ head(resultsComparisson)
 # Chosen model
 
 
-**Fine-tunned Random Forest, delivered the best performance in terms of both MSE and RMSE. Its boosting mechanism allowed it to effectively minimize the error over multiple rounds, making it the top-performing model in this project.**
+**Fine tuned Random Forest, delivered the best performance in terms of both MSE and RMSE. Its boosting mechanism allowed it to effectively minimize the error over multiple rounds, making it the top-performing model in this project.**
 
 ### Storing prediction file 
 
@@ -520,6 +518,6 @@ In future work, further tuning of hyper-parameters for each model may improve pe
 
 Write down what each team member contributed to the project.
 
-- Aaron van Riet: pre-processing, Random Forest (Iterative parameter adjustments).
-- Max Verwijmeren: data description, KNN, Random Forest (Iterative parameter adjustments).  
-- Nelson Durañona Sosa: data description, Linear regression, code refactoring.
+- Aaron van Riet: pre-processing,  Random Forest (Iterative parameter adjustments).
+- Max Verwijmeren: data description, KNN, XGBoost, Random Forest (Iterative parameter adjustments).  
+- Nelson Durañona: data description, Linear regression, code refactoring.
