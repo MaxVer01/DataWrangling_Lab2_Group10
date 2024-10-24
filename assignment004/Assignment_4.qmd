@@ -1,0 +1,399 @@
+---
+---
+title: "Assignment 4"
+author:  
+  - Aaron van Riet
+  - Nelson Durañona Sosa 
+  - Max Verwijmeren
+  
+date: last-modified
+format:
+  html:
+    toc: true
+    self-contained: true
+    code-fold: true
+    df-print: kable
+---
+
+```{r}
+#| output: false
+#| warning: false
+# Install if necessary
+if(!require(text2vec)) install.packages("text2vec")
+if(!require(textstem)) install.packages("textstem")
+if(!require(tidyverse)) install.packages("tidyverse")
+if(!require(tidytext)) install.packages("tidytext")
+if(!require(tm)) install.packages("tm")
+if(!require(wordcloud)) install.packages("wordcloud")
+if(!require(SnowballC)) install.packages("SnowballC")
+if(!require(cluster)) install.packages("cluster")
+if(!require(knitr)) install.packages("knitr")
+if(!require(dbscan)) install.packages("dbscan")
+if(!require(ggplot2)) install.packages("ggplot2")
+if(!require(clusterSim)) install.packages("clusterSim")
+if(!require(ggdendro)) install.packages("ggdendro")
+
+
+#if(!require(factoextra)) install.packages("factoextra")
+#if(!require(factoextra)) install.packages("dbscan", type = "source")
+
+```
+
+```{r}
+#| output: false
+#| warning: false
+#Loading libraries
+library('text2vec') #Dataset
+library(tidyverse) 
+library(tidytext) 
+library(tm)        
+library(wordcloud)  
+library(SnowballC) 
+library(textstem)
+library(koRpus)
+library(knitr) 
+library(cluster)
+#library(factoextra)
+library(dbscan)
+library(ggplot2)
+library(clusterSim)
+library(ggdendro)
+```
+
+# Assignment 4: Text Clustering
+
+In this assignment we will build clustering models on text data, specifically on reviews from the Internet Movie Database (IMDB)
+
+We will use clustering methods and compare these trough evaluation methods.
+
+-   **Step 1:** Data Description and Exploration
+
+-   **Step 2:** Preprocessing
+
+-   **Step 3:** Clustering
+
+-   **Step 4:** Evaluation
+
+## Data Description and Exploration
+
+The dataset used for this analysis consists of 5,000 labeled IMDB movie reviews, curated for sentiment analysis tasks. Each review is assigned a binary sentiment score: reviews with an IMDB rating less than 5 are labeled as negative (0), while those with a rating of 7 or higher are labeled as positive (1). The dataset is structured to ensure that no individual movie has more than 30 reviews. Additionally, non-ASCII symbols were removed. The dataset contains three variables:
+
+-   **id**: Unique ID of each review
+
+-   **sentiment**: Sentiment of the review; 1 for positive reviews and 0 for negative reviews
+
+-   **review**: Text of the review
+
+```{r}
+reviews <- movie_review
+
+kable(head(movie_review, 1))
+
+?movie_review
+```
+
+Now that we have a basic grasp of the data. We will use some other EDA techniques to further analyze.
+
+**Checking for Missing Data**
+
+```{r}
+colSums(is.na(movie_review))  # Count missing values per column
+```
+
+### **Sentiment Distribution**
+
+```{r}
+# Count unique sentiment labels
+counted_data <- count(reviews, sentiment)
+
+# Plot 
+ggplot(counted_data, aes(x = "", y = n, fill = sentiment)) +
+  geom_bar(stat = "identity", width = 1, colour = "black") +
+  coord_polar(theta = "y") +
+  geom_text(aes(label = scales::percent(n/sum(n))), 
+            position = position_stack(vjust = 0.5)) +
+  labs(title = "Distribution of sentiment", fill = "Sentiment score")
+
+counted_data
+```
+
+In the plot, we can see that 50.34% of the reviews have a sentiment score of 1, while 49.66% have a sentiment score of 0. This shows that the sentiment distribution in the reviews is nearly balanced.
+
+### Review Length Distribution
+
+```{r}
+movie_review$review_length <- nchar(movie_review$review)
+
+ggplot(movie_review, aes(x = review_length, colour = as.factor(sentiment))) +
+  geom_freqpoly(binwidth = 250) +
+  labs(
+    title = "Distribution of movie review character length",
+    colour = "Sentiment score",
+    x = "Amount of characters in review"
+  )
+```
+
+The plot shows the distribution of movie review lengths based on their character count.The majority of reviews are relatively short, clustering between 0 and 2000 characters. Both positive and negative reviews follow a similar pattern, with no significant difference in review length between the two sentiment categories. As review length increases the frequency of reviews drops sharply, with a small amount of reviews exceeding 5000 characters.
+
+```{r}
+#Mean of review length
+print(paste("The average review is", round(mean(reviews$review_length)), " characters long."))
+
+#Min of review length
+print(paste("The shortest review is ", round(min(reviews$review_length)), " characters long."))
+
+
+#Max of review length
+print(paste("The largest review is ", round(max(reviews$review_length)), " characters long."))
+
+```
+
+**Statistics:**
+
+-   The average review is 1,350 characters long.
+
+-   The shortest review is 70 characters long.
+
+-   The longest review is 13,708 characters long.
+
+### **Wordcloud of Words in Reviews**
+
+```{r}
+# Wordcloud of common Words before preprocessing
+    wordcloud(
+      words = reviews$review,
+      min.freq = 5,
+      max.words = 50,
+      random.order = FALSE,
+      colors = brewer.pal(8, "Dark2")
+    )
+```
+
+The word cloud shows the most frequently used words in movie reviews. Larger words appear more often, with "the," "movie," and "film" being the most common. This makes sense since reviews are about movies, and words like "the" are commonly used but don't provide much meaningful information. More insightful words, like "one," "like," "just," and "good," often appear in discussions about the movies. Additionally, words such as "story," "great," "characters," and "time" are frequently mentioned, which may offer more valuable insights into the reviews.
+
+## Datapreprocessing
+
+In this section, we preprocess the data to enhance its suitability for analysis. We applied the following methods:
+
+-   Tokenization
+
+-   Stop word removal
+
+-   Common word removal
+
+### **Step 1: Tokenization**
+
+This process breaks the text into individual units, called tokens. Tokenization is important for further analysis.
+
+```{r}
+# tokenize texts
+review_words <- reviews |> 
+  unnest_tokens(word, review)
+
+# check the resulting tokens
+kable(head(review_words))
+```
+
+**Viewing most frequent tokens**
+
+```{r}
+review_words |> 
+  # count the frequency of each word
+  count(word) |> 
+  # arrange the words by its frequency in descending order
+  arrange(desc(n)) |> 
+  # select the top 30 most frequent words
+  head(30) |> 
+  # make a bar plot (reorder words by their frequencies)
+  ggplot(aes(x = n, y = reorder(word, n))) + 
+  geom_col(fill="gray") +
+  labs(x = "frequency", y="words") + 
+  theme_minimal()
+```
+
+### **Step 2: Removing stop words using stop_words dataset**
+
+In this step, we remove common stop words (e.g., "the", "and", "in") using a predefined list. Tokenization enables us to visualize each preprocessing step, and after removing stop words, we eliminate many 'irrelevant' words.
+
+```{r}
+review_words_no_stop  <- 
+  review_words  |> 
+  # remove stop words
+  anti_join(stop_words)
+```
+
+```{r}
+review_words_no_stop |> 
+  count(word) |> 
+  arrange(desc(n)) |> 
+  head(30) |> 
+  ggplot(aes(x = n, y = reorder(word, n))) + 
+  geom_col(fill="gray") +
+  labs(x = "frequency", y="words") + 
+  theme_minimal()
+```
+
+### **Step 3: Common Words Removal**
+
+In this step, we eliminate frequently occurring words that may not be stop words but still add little value to the analysis. These common words can dominate the text and skew the results, so removing them helps focus on more meaningful and unique terms in the dataset.
+
+```{r}
+# Filter all reviews with commons words in them
+reviews_contaning_movie <- filter(reviews, str_detect(reviews$review, "movie"))
+reviews_contaning_br <- filter(reviews, str_detect(reviews$review, "br"))
+reviews_contaning_film <- filter(reviews, str_detect(reviews$review, "film"))
+reviews_contaning_movies <- filter(reviews, str_detect(reviews$review, "movies"))
+reviews_contaning_films <- filter(reviews, str_detect(reviews$review, "films"))
+
+
+print(paste(nrow(reviews_contaning_movie), " reviews contain the word movie"))
+print(paste(nrow(reviews_contaning_br), " reviews contain the word br"))
+print(paste(nrow(reviews_contaning_film), " reviews contain the word film"))
+print(paste(nrow(reviews_contaning_movies), " reviews contain the word movies"))
+print(paste(nrow(reviews_contaning_films), " reviews contain the word films"))
+
+```
+
+```{r}
+#We add movie, film br(breakline) and synonyms to a custom stopwordlist. Also the most noticable words in the previous wordcloud
+custom_stopwords <- 
+  stop_words |> 
+  filter(!word %in% c("")) |>  
+  rbind(tibble(word = c("film", "films", "movie", "movies", "br"), lexicon = c("Me", "Me", "Me", "Me", "Me")))
+
+# remove stop words
+review_words_no_stop_modified <- 
+  review_words |>
+  anti_join(custom_stopwords)
+
+#plot
+review_words_no_stop_modified |> 
+  count(word) |> 
+  arrange(desc(n)) |> 
+  head(30) |> 
+  ggplot(aes(x = n, y = reorder(word, n))) + 
+  geom_col(fill="gray") +
+  labs(x = "frequency", y="words") + 
+  theme_minimal()
+```
+
+**Wordcloud with Preprocessed Data**
+
+```{r}
+wordcloud(
+  words = review_words_no_stop_modified$word,
+  min.freq = 5,
+  max.words = 50,
+  random.order = FALSE,
+  colors = brewer.pal(8, "Dark2"))
+```
+
+The updated word cloud already provides more meaningful insights compared to the initial version, as irrelevant or overly common words have been filtered out, allowing more significant terms to stand out.
+
+## Text Representation
+
+We used Document-Term Matrix (DTM). This is a Matrix where each row and each column is a word. Numerical expressions show how many times that word is in the data.
+
+```{r}
+# Transform the dataframe to the original 'wide' format 
+wide_df <- review_words_no_stop_modified %>%
+  group_by(id) %>%
+  summarise(review = paste(word, collapse = " "))
+
+# Create a corpus
+corpus <- Corpus(VectorSource(wide_df$review))
+
+# Transform the corpus into a dtm
+dtm <- DocumentTermMatrix(corpus)
+
+# Apply tf/idf scores to the dtm dataframe and remove sparse terms from the dtm
+dtm_tfidf <- weightTfIdf(dtm) |>
+  removeSparseTerms(0.99)
+
+#Extra preproccessing (Dimension Reduction)
+dtm_tfidf_matrix <- as.matrix(dtm_tfidf)
+ 
+# Inspect the document-term matrix
+inspect(dtm_tfidf)
+```
+
+## Clustering
+
+In this part we cluster the text with ***(two/three)*** clustering methods: K-Means, NAME and NAME.
+
+**K-Means**\
+K-Means is one of the most popular distance based clustering method. K-Means looks for a partition that minimizes the total within-cluster variance, aiming to group similar texts together based on their representations.
+
+```{r}
+
+set.seed(123)
+t_dtm_tfidf <- as.matrix(t(dtm_tfidf))
+words_distances <- dist(t(dtm_tfidf), method = "euclidian")
+words_distances_m <- as.matrix(words_distances)
+
+words_distances_m[1:5, 1:5] # just to inspect this distance matrix
+
+# clustering of words
+
+word_importance <- rowSums(t_dtm_tfidf)
+
+summary_cluster_words <- function(kmeans_result, maxWords = 20) {
+  cluster_words <- lapply(unique(kmeans_result$cluster), function(x) {
+    i_cluster_indexes <- which(kmeans_result$cluster == x)
+    rows <- word_importance[order(word_importance[i_cluster_indexes],
+      decreasing = TRUE
+    )][1:maxWords]
+  })
+}
+
+create_df_summary <- function(kmean_result, cluster_words) {
+  cluster_summary_5 <- data.frame(
+    cluster = unique(kmean_result$cluster),
+    size = as.numeric(table(kmean_result$cluster)),
+    top_words = sapply(cluster_words, function(d) {
+      paste(
+        names(d),
+        collapse = ", "
+      )
+    }),
+    stringsAsFactors = TRUE
+  ) |> arrange(cluster)
+}
+
+# K-means k=5 
+w_kmeans_5 <- kmeans(words_distances_m, centers = 5)
+summary_words_kmean5 <- summary_cluster_words(w_kmeans_5, 20)
+df_summary_5 <- create_df_summary(w_kmeans_5, summary_words_kmean5)
+kable(head(df_summary_5, 5))
+# K-means k=10
+w_kmeans_10 <- kmeans(words_distances_m, centers = 10)
+summary_words_kmean5 <- summary_cluster_words(w_kmeans_10, 20)
+df_summary_10 <- create_df_summary(w_kmeans_10, summary_words_kmean5)
+kable(head(df_summary_10, 10))
+
+# Silhouette_score evaluation usin kmean
+silhouette_score <- function(k){
+  km <- kmeans(words_distances_m, centers = k)
+  ss <- silhouette(km$cluster, words_distances_m)
+  mean(ss[, 3])
+}
+
+k <- 2:10
+avg_sil <- sapply(k, silhouette_score)
+plot(k, type='b', avg_sil, xlab='Number of clusters using K-mean', ylab='Average Silhouette Scores', frame=FALSE)
+
+```
+
+NAME AND EXPLANATION
+
+NAME AND EXPLANATION
+
+## **Evaluation**
+
+## Contributions
+
+## References :
+- https://www.rtextminer.com/articles/b_document_clustering.html
+- https://books.psychstat.org/textmining/cluster-analysis.html
+
+
