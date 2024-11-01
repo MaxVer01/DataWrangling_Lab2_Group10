@@ -32,6 +32,7 @@ if(!require(dbscan)) install.packages("dbscan")
 if(!require(ggplot2)) install.packages("ggplot2")
 if(!require(clusterSim)) install.packages("clusterSim")
 if(!require(ggdendro)) install.packages("ggdendro")
+if(!require(topicmodels)) install.packages("topicmodels")
 
 
 #if(!require(factoextra)) install.packages("factoextra")
@@ -58,6 +59,7 @@ library(dbscan)
 library(ggplot2)
 library(clusterSim)
 library(ggdendro)
+library(topicmodels)
 ```
 
 # Assignment 4: Text Clustering
@@ -255,7 +257,7 @@ print(paste(nrow(reviews_contaning_films), " reviews contain the word films"))
 ```
 
 ```{r}
-#We add movie, film br(breakline) and synonyms to a custom stopwordlist. Also the most noticable words in the previous wordcloud
+#We add movie, film br(breakline) and synonyms to a custom stopwordlist. Also the most noticeable words in the previous wordcloud
 custom_stopwords <- 
   stop_words |> 
   filter(!word %in% c("")) |>  
@@ -292,7 +294,7 @@ The updated word cloud already provides more meaningful insights compared to the
 
 ## Text Representation
 
-We used Document-Term Matrix (DTM). This is a Matrix where each row and each column is a word. Numerical expressions show how many times that word is in the data.
+We used Document-Term Matrix (DTM). This is a Matrix where each row is a review (document) and each column is a word. Numerical expressions show how many times that word is in the data.
 
 ```{r}
 # Transform the dataframe to the original 'wide' format 
@@ -384,11 +386,32 @@ plot(k, type='b', avg_sil, xlab='Number of clusters using K-mean', ylab='Average
 
 ```
 
-NAME AND EXPLANATION
+**Topic modeling**
 
-NAME AND EXPLANATION
+Topic modeling is a method to discover topics in a text dataset. Topics consist of groups of words important for that topic. Documents can be grouped together based on the topics in them.
 
-## **Evaluation**
+
+```{r}
+# number of topics to model
+t = 10
+
+# fit LDA model
+lda_model = LDA(dtm, k = t)
+
+# exploring most used terms per topic
+(topic_terms = terms(lda_model, 10))
+
+# calculate what topics are present in each document
+topic_distribution = posterior(lda_model)$topics
+head(topic_distribution)
+
+```
+
+**GMM**
+
+
+
+**Evaluation**
 
 ## Contributions
 
